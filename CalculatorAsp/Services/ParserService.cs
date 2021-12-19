@@ -9,7 +9,7 @@ public interface IParserService
 
 public class ParserServiceService : IParserService
 {
-    public readonly Dictionary<string, int> _prioritiesMap;
+    private readonly Dictionary<string, int> _prioritiesMap;
 
     public ParserServiceService(Operations operations)
     {
