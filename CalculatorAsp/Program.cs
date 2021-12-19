@@ -1,4 +1,5 @@
 using CalculatorAsp;
+using CalculatorAsp.Models;
 using CalculatorAsp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
