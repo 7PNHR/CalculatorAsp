@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
-using CalculatorAsp;
+using CalculatorAsp.Models;
 using CalculatorAsp.Services;
+using Moq;
 
 namespace Test
 {
@@ -26,6 +28,13 @@ namespace Test
         public void TestParse()
         {
             var tokens = _tokenizerService.GetTokens("1+2").ToList();
+            Assert.AreEqual(3, tokens.Count);
+        }
+
+        [Test]
+        public void TestParseUnaryMinus()
+        {
+            var tokens = _tokenizerService.GetTokens("1+-2").ToList();
             Assert.AreEqual(3, tokens.Count);
         }
 
@@ -59,8 +68,14 @@ namespace Test
         [Test]
         public void TestGetPolishNotation()
         {
-            var tokens = _tokenizerService.GetTokens("1+2");
-            var polishNotation = _parserService.ParseToReversePolishNotation(tokens)
+            var mock = new Mock<ITokenizerService>();
+            mock.Setup(x => x.GetTokens("1+2")).Returns(new List<Token>
+            {
+                new (TokenType.Number, "1"),
+                new (TokenType.Operation, "+"),
+                new (TokenType.Number, "2")
+            });
+            var polishNotation = _parserService.ParseToReversePolishNotation(mock.Object.GetTokens("1+2"))
                 .Select(x => x.Content).ToList();
             var str = string.Join("", polishNotation);
             Assert.AreEqual("12+", str);
@@ -69,8 +84,14 @@ namespace Test
         [Test]
         public void TestGetPolishNotationWithCommas()
         {
-            var tokens = _tokenizerService.GetTokens("1+2,13");
-            var polishNotation = _parserService.ParseToReversePolishNotation(tokens)
+            var mock = new Mock<ITokenizerService>();
+            mock.Setup(x => x.GetTokens("1+2,13")).Returns(new List<Token>
+            {
+                new (TokenType.Number, "1"),
+                new (TokenType.Operation, "+"),
+                new (TokenType.Number, "2,13")
+            });
+            var polishNotation = _parserService.ParseToReversePolishNotation(mock.Object.GetTokens("1+2,13"))
                 .Select(x => x.Content).ToList();
             var str = string.Join("", polishNotation);
             Assert.AreEqual("12,13+", str);
@@ -79,8 +100,21 @@ namespace Test
         [Test]
         public void TestPolishNotationGetWithParentheses()
         {
-            var tokens = _tokenizerService.GetTokens("1+2+(4*5)");
-            var polishNotation = _parserService.ParseToReversePolishNotation(tokens)
+
+            var mock = new Mock<ITokenizerService>();
+            mock.Setup(x => x.GetTokens("1+2+(4*5)")).Returns(new List<Token>
+            {
+                new (TokenType.Number, "1"),
+                new (TokenType.Operation, "+"),
+                new (TokenType.Number, "2"),
+                new (TokenType.Operation, "+"),
+                new (TokenType.Parentheses, "("),
+                new (TokenType.Number, "4"),
+                new (TokenType.Operation, "*"),
+                new (TokenType.Number, "5"),
+                new (TokenType.Parentheses, ")"),
+            });
+            var polishNotation = _parserService.ParseToReversePolishNotation(mock.Object.GetTokens("1+2+(4*5)"))
                 .Select(x => x.Content).ToList();
             var str = string.Join("", polishNotation);
             Assert.AreEqual("12+45*+", str);
@@ -89,35 +123,125 @@ namespace Test
         [Test]
         public void TestCalculator()
         {
-            var result = _calculatorService.Calculate(_parserService.ParseToReversePolishNotation(_tokenizerService.GetTokens("2+2")));
+            var tokenizerMock = new Mock<ITokenizerService>();
+            tokenizerMock.Setup(x => x.GetTokens("2+2")).Returns(new List<Token>
+            {
+                new (TokenType.Number, "2"),
+                new (TokenType.Operation, "+"),
+                new (TokenType.Number, "2")
+            });
+
+            var mock = new Mock<IParserService>();
+            mock.Setup(x => x.ParseToReversePolishNotation(tokenizerMock.Object.GetTokens("2+2"))).Returns(new List<Token>
+            {
+                new (TokenType.Number, "2"),
+                new (TokenType.Number, "2"),
+                new (TokenType.Operation, "+")
+            });
+            var result = _calculatorService
+                .Calculate(mock.Object.ParseToReversePolishNotation(tokenizerMock.Object.GetTokens("2+2")));
             Assert.AreEqual("4", result);
         }
 
         [Test]
         public void TestCalculatorWithMinus()
         {
-            var result = _calculatorService.Calculate(_parserService.ParseToReversePolishNotation(_tokenizerService.GetTokens("2-2")));
+            var tokenizerMock = new Mock<ITokenizerService>();
+            tokenizerMock.Setup(x => x.GetTokens("2-2")).Returns(new List<Token>
+            {
+                new (TokenType.Number, "2"),
+                new (TokenType.Operation, "-"),
+                new (TokenType.Number, "2")
+            });
+
+            var mock = new Mock<IParserService>();
+            mock.Setup(x => x.ParseToReversePolishNotation(tokenizerMock.Object.GetTokens("2-2"))).Returns(new List<Token>
+            {
+                new (TokenType.Number, "2"),
+                new (TokenType.Number, "2"),
+                new (TokenType.Operation, "-")
+            });
+            var result = _calculatorService
+                .Calculate(mock.Object.ParseToReversePolishNotation(tokenizerMock.Object.GetTokens("2-2")));
             Assert.AreEqual("0", result);
         }
 
         [Test]
         public void TestCalculatorWithMultiplication()
         {
-            var result = _calculatorService.Calculate(_parserService.ParseToReversePolishNotation(_tokenizerService.GetTokens("2*3+2")));
+            var tokenizerMock = new Mock<ITokenizerService>();
+            tokenizerMock.Setup(x => x.GetTokens("2*3+2")).Returns(new List<Token>
+            {
+                new (TokenType.Number, "2"),
+                new (TokenType.Operation, "*"),
+                new (TokenType.Number, "3"),
+                new (TokenType.Operation, "+"),
+                new (TokenType.Number, "2")
+            });
+
+            var mock = new Mock<IParserService>();
+            mock.Setup(x => x.ParseToReversePolishNotation(tokenizerMock.Object.GetTokens("2*3+2"))).Returns(new List<Token>
+            {
+                new (TokenType.Number, "2"),
+                new (TokenType.Number, "3"),
+                new (TokenType.Operation, "*"),
+                new (TokenType.Number, "2"),
+                new (TokenType.Operation, "+"),
+            });
+            var result = _calculatorService
+                .Calculate(mock.Object.ParseToReversePolishNotation(tokenizerMock.Object.GetTokens("2*3+2")));
             Assert.AreEqual("8", result);
         }
 
         [Test]
         public void TestCalculatorWithDivision()
         {
-            var result = _calculatorService.Calculate(_parserService.ParseToReversePolishNotation(_tokenizerService.GetTokens("5/2,5")));
+            var tokenizerMock = new Mock<ITokenizerService>();
+            tokenizerMock.Setup(x => x.GetTokens("5/2,5")).Returns(new List<Token>
+            {
+                new (TokenType.Number, "5"),
+                new (TokenType.Operation, "/"),
+                new (TokenType.Number, "2,5")
+            });
+
+            var mock = new Mock<IParserService>();
+            mock.Setup(x => x.ParseToReversePolishNotation(tokenizerMock.Object.GetTokens("5/2,5"))).Returns(new List<Token>
+            {
+                new (TokenType.Number, "5"),
+                new (TokenType.Number, "2,5"),
+                new (TokenType.Operation, "/")
+            });
+            var result = _calculatorService
+                .Calculate(mock.Object.ParseToReversePolishNotation(tokenizerMock.Object.GetTokens("5/2,5")));
             Assert.AreEqual("2", result);
         }
 
         [Test]
         public void TestCalculatorWithDivisionZero()
         {
-            var result = _calculatorService.Calculate(_parserService.ParseToReversePolishNotation(_tokenizerService.GetTokens("4/(2-2)")));
+            var tokenizerMock = new Mock<ITokenizerService>();
+            tokenizerMock.Setup(x => x.GetTokens("4/(2-2)")).Returns(new List<Token>
+            {
+                new (TokenType.Number, "4"),
+                new (TokenType.Operation, "/"),
+                new (TokenType.Parentheses, "("),
+                new (TokenType.Number, "2"),
+                new (TokenType.Operation, "-"),
+                new (TokenType.Number, "2"),
+                new (TokenType.Parentheses, ")")
+            });
+
+            var mock = new Mock<IParserService>();
+            mock.Setup(x => x.ParseToReversePolishNotation(tokenizerMock.Object.GetTokens("4/(2-2)"))).Returns(new List<Token>
+            {
+                new (TokenType.Number, "4"),
+                new (TokenType.Number, "2"),
+                new (TokenType.Number, "2"),
+                new (TokenType.Operation, "-"),
+                new (TokenType.Operation, "/")
+            });
+            var result = _calculatorService
+                .Calculate(mock.Object.ParseToReversePolishNotation(tokenizerMock.Object.GetTokens("4/(2-2)")));
             Assert.AreEqual(double.PositiveInfinity.ToString(), result);
         }
     }

@@ -20,17 +20,21 @@ namespace CalculatorAsp.Services
 
         public TokenType DetermineTokenType(char token)
         {
+            var tokenType = TokenType.None;
             _previusToken = token;
-            if (token is '(' or ')') _previusTokenType = TokenType.Parentheses;
-            else if (token is ',') _previusTokenType = TokenType.Comma;
+            if (token is '(' or ')') tokenType = TokenType.Parentheses;
+            else if (token is ',') tokenType = TokenType.Comma;
             else if (_operationsList.Contains(token))
             {
                 if(token is '-' && (_previusTokenType is TokenType.Operation or TokenType.None || _previusToken is'('))
-                    _previusTokenType = TokenType.Number;
-                else _previusTokenType = TokenType.Operation;
+                    tokenType = TokenType.Number;
+                else tokenType = TokenType.Operation;
             }
-            if (char.IsDigit(token)) _previusTokenType = TokenType.Number;
-            return _previusTokenType;
+            if (char.IsDigit(token)) tokenType = TokenType.Number;
+            if (tokenType == TokenType.None)
+                throw new Exception();
+            _previusTokenType = tokenType;
+            return tokenType;
         }
     }
 }
