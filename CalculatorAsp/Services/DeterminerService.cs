@@ -10,8 +10,6 @@ namespace CalculatorAsp.Services
     public class DeterminerService : IDeterminerService
     {
         private readonly List<char> _operationsList;
-        private TokenType _previusTokenType = TokenType.None;
-        private char _previusToken;
 
         public DeterminerService(Operations operations)
         {
@@ -20,21 +18,11 @@ namespace CalculatorAsp.Services
 
         public TokenType DetermineTokenType(char token)
         {
-            var tokenType = TokenType.None;
-            _previusToken = token;
-            if (token is '(' or ')') tokenType = TokenType.Parentheses;
-            else if (token is ',') tokenType = TokenType.Comma;
-            else if (_operationsList.Contains(token))
-            {
-                if(token is '-' && (_previusTokenType is TokenType.Operation or TokenType.None || _previusToken is'('))
-                    tokenType = TokenType.Number;
-                else tokenType = TokenType.Operation;
-            }
-            if (char.IsDigit(token)) tokenType = TokenType.Number;
-            if (tokenType == TokenType.None)
-                throw new Exception();
-            _previusTokenType = tokenType;
-            return tokenType;
+            if (token is '(' or ')') return TokenType.Parentheses;
+            if (token is ',') return TokenType.Comma;
+            if (_operationsList.Contains(token)) return TokenType.Operation;
+            if (char.IsDigit(token)) return TokenType.Number;
+            throw new Exception("Unrecognizable token type");
         }
     }
 }

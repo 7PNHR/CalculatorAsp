@@ -24,7 +24,7 @@ public class TokenizerServiceService : ITokenizerService
         foreach (var token in inputLine.Where(x => x != ' ' || !char.IsWhiteSpace(x)))
         {
             var tokenType = _determinerService.DetermineTokenType(token);
-            if (tokenType is not TokenType.Number and not TokenType.Comma)
+            if (tokenType is not TokenType.Number and not TokenType.Comma && !(token is '-' && sb.Length == 0))
             {
                 if (sb.Length! > 0) yield return new Token(lastTokenType, sb.ToString());
                 yield return new Token(tokenType, token.ToString());

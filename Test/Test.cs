@@ -27,6 +27,7 @@ namespace Test
         [Test]
         public void TestParse()
         {
+            
             var tokens = _tokenizerService.GetTokens("1+2").ToList();
             Assert.AreEqual(3, tokens.Count);
         }
